@@ -1,11 +1,14 @@
 class Agent:
-    def __init__(self, name, x, y, v, goal):#, orientation):
+    def __init__(self, name, x, y, v, goal, orientation=None):
         self.name = name
         self.x = x
         self.y = y
         self.v = v
         self.goal = goal
-        self.orientation = 0
+        if orientation is not None:
+            self.orientation = orientation
+        else:
+            self.orientation = 0
         # if self.orientation == self.goal:
         #     self.turn = True
         # else:
