@@ -16,6 +16,7 @@ from __future__ import print_function
 import sys
 sys.path.append('..')
 from random import choice
+import time
 # from mcts import MCTS, Node
 import numpy as np
 from tulip.spec import form
@@ -368,7 +369,6 @@ def specs_for_entire_track(tracklength):
     ego_spec = Spec(sys_vars, sys_init, sys_safe, sys_prog)
     test_spec = Spec(tester_vars, tester_init, tester_safe, tester_prog)
     # st()
-
     return ego_spec, test_spec
 
 
@@ -485,6 +485,7 @@ def specs_car_merge(tracklength):
         tester_safe |= {'(x2='+str(ii)+' && y2=2) -> X((x2='+str(ii+1)+' && y2=2)||(x2='+str(ii)+' && y2=2)|| (x2='+str(ii+1)+' && y2=1))'}
         tester_safe |= {'(x2='+str(ii)+' && y2=1) -> X((x2='+str(ii+1)+' && y2=1)||(x2='+str(ii)+' && y2=1)|| (x2='+str(ii+1)+' && y2=2))'}
         tester_safe |= {'(x1='+str(ii)+' && y1=2) -> X((x1='+str(ii+1)+' && y1=2)||(x1='+str(ii)+' && y1=2)|| (x1='+str(ii+1)+' && y1=1))'}
+
     # tester_safe |= {'!(x1='+str(tracklength)+' && x2=0)'}
     tester_safe |= {'(x2='+str(tracklength)+' && y2=2) -> X(x2='+str(tracklength)+' && y2=2)'}
     tester_safe |= {'(x2='+str(tracklength)+' && y2=1) -> X(x2='+str(tracklength)+' && y2=1)'}
@@ -1047,7 +1048,8 @@ def ee_image(source, aut):
 
 def get_winset(tracklength, merge_setting):
     if merge_setting == "between":
-        ego_spec, test_spec = specs_car_merge(tracklength) #spec_merge_in_front()#all_system(3)#spec_merge_in_front()#test_spec()#specs_for_entire_track(5)
+        # ego_spec, test_spec = specs_car_merge(tracklength)
+        ego_spec, test_spec = specs_for_entire_track(tracklength) #spec_merge_in_front()#all_system(3)#spec_merge_in_front()#test_spec()#specs_for_entire_track(5)
         gr_spec = make_grspec(test_spec, ego_spec) # Placing test_spec as sys_spec and sys_spec as env_spec to
         # print(gr_spec.pretty())
         w_set = WinningSet()
@@ -1081,8 +1083,23 @@ def get_winset(tracklength, merge_setting):
     states_in_winset, states_out_winset = check_all_states_in_winset(tracklength, agentlist, w_set, fp, aut, merge_setting)
     return states_in_winset
 
+# Define winning sets:
+def save_times(tracklength,times):
+    save_dict = dict()
+    save_dict.update({'tracklength': tracklength})
+    save_dict.update({'times': times})
+    # save dict in pkl file
+    output_dir = os.getcwd()+'/saved_data/'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    filename = 'full_track_synth_times_file.p'
+    filepath = output_dir + filename
+    print('Saving data in pkl file')
+    with open(filepath, 'wb') as pckl_file:
+        pickle.dump(save_dict, pckl_file)
+
 if __name__ == '__main__':
-    ex = 4 # Abstraction for the merge example
+    ex = 0 # Abstraction for the merge example
     if ex==6: # Constructing abstraction for the merge example
         tracklength = 3
         ego_spec, test_spec = specs_two_testers(tracklength) #spec_merge_in_front()#all_system(3)#spec_merge_in_front()#test_spec()#specs_for_entire_track(5)
@@ -1101,7 +1118,7 @@ if __name__ == '__main__':
         states_in_winset, states_out_winset = check_all_states(tracklength, agentlist, w_set, aut)
 
     if ex==5: # Constructing abstraction for the merge example
-        tracklength = 10
+        tracklength = 11
         ego_spec, test_spec = specs_for_entire_track(tracklength) #spec_merge_in_front()#all_system(3)#spec_merge_in_front()#test_spec()#specs_for_entire_track(5)
         gr_spec = make_grspec(test_spec, ego_spec) # Placing test_spec as sys_spec and sys_spec as env_spec to
         print(gr_spec.pretty())
@@ -1113,13 +1130,12 @@ if __name__ == '__main__':
         states_in_winset, states_out_winset = check_all_states(tracklength, agentlist, w_set, aut)
 
     if ex==4: # Constru
-        tracklength = 4
+        tracklength = 7
         ego_spec, test_spec = specs_car_merge(tracklength) #spec_merge_in_front()#all_system(3)#spec_merge_in_front()#test_spec()#specs_for_entire_track(5)
         gr_spec = make_grspec(test_spec, ego_spec) # Placing test_spec as sys_spec and sys_spec as env_spec to
         print(gr_spec.pretty())
         w_set = WinningSet()
         w_set.set_spec(gr_spec)
-
 
         aut = w_set.make_compatible_automaton(gr_spec)
         # g = synthesize_some_controller(aut)
@@ -1133,7 +1149,23 @@ if __name__ == '__main__':
         states_in_winset = check_all_states_in_winset(tracklength, agentlist, w_set, fp, aut, mode)
     # Check paranthesizing:
     # ego_spec_init = r' /\ '.join(f'({e})' for e in ego_spec.init)
+    ex = "original"
+    if ex == "original":
+        tracklengths = []
+        times = []
+        for tracklength in range(5,16):
+            try:
+                tic = time.time()
+                states_in_winset = get_winset(tracklength, "between")
+                toc = time.time()
+                times.append(toc-tic)
+                # print(toc-tic)
+                tracklengths.append(tracklength)
+            except:
+                print("not converging")
+                break
 
+        save_times(tracklengths,times)
     pdb.set_trace()
     ego_spec_init = stx.conj(ego_spec.init)
     test_spec_init = stx.conj(test_spec.init)
