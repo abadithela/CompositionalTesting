@@ -627,7 +627,7 @@ def specs_car_rh(tracklength, merge_setting):
     return ego_spec, test_spec, Vij_dict, state_tracker, ver2st_dict, G, state_dict_test, state_dict_system
 
 # Save times:
-def specs_full(tracklength):
+def specs_full(tracklength, merge_setting):
     ego_vars = {}
     merge_setting = "between"
     ego_vars['x'] = (1, tracklength)
@@ -647,12 +647,22 @@ def specs_full(tracklength):
     test_safe = add_merge_specs(tracklength, merge_setting, test_safe)
     test_prog = set()
     # test_prog = add_psi_j_progress(tracklength, j, merge_setting)
-    test_prog |= {''}
+    merge_spec = "(x=2 && x1=3 && x2=2 && y=2 && y1=2 && y2=2)"
+    # tester_safe |= {merge_spec + " -> X(" + merge_spec+")"}
+    # sys_safe |= {merge_spec + " -> X(" + merge_spec+")"}
+    # sys_merge_spec = "(x=2 && y=2)"
+    for ki in range(2,tracklength-1):
+        new_merge_state = "(x="+str(ki+1)+ " && x1=" + str(ki+2) + " && x2=" + str(ki) + "&& y=2 && y1=2 && y2=2)"
+        # tester_safe |= {new_merge_state + " -> X(" + new_merge_state+")"}
+        # sys_safe |= {new_merge_state + " -> X(" + new_merge_state +")"}
+        merge_spec += "|| " + new_merge_state
+    test_prog |= {merge_spec}
     ego_n = 2*tracklength
     tester_n = (tracklength-1)**2
     G, st2ver_dict, ver2st_dict, state_tracker, state_dict_test, state_dict_system = get_all_states(tracklength, ego_n, tester_n)
     goal_lambda = construct_lambda_function(merge_setting)
     Vij_dict = get_Vj_for_all_goals(tracklength, G, st2ver_dict, ver2st_dict, state_tracker, goal_lambda)
+
     ego_spec = Spec(ego_vars, ego_init, ego_safe, ego_prog)
     test_spec = Spec(test_vars, test_init, test_safe, test_prog)
     return ego_spec, test_spec

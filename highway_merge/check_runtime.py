@@ -4,7 +4,7 @@ import time
 import os
 import pickle
 from ipdb import set_trace as st
-from merge_receding_horizon_winsets import get_tester_states_in_winsets, specs_car_rh, get_winset_rh
+from merge_receding_horizon_winsets import get_tester_states_in_winsets, specs_car_rh, get_winset_rh, specs_full
 from winning_set.correct_win_set import specs_for_entire_track, make_grspec, Spec, WinningSet, check_all_states_in_winset
 
 
@@ -61,7 +61,6 @@ def plot_the_times(tracklength, times):
 
     # plot
     fig, ax = plt.subplots()
-
     plt.plot(x, y, linewidth=2.0)
 
     # ax.set(xlim=(0, 8), xticks=np.arange(1, 8),
@@ -80,12 +79,11 @@ def original_specs():
     tracklength = np.linspace(5, Lmax, Lmax-5+1)
     tracklength = [int(tli) for tli in tracklength]
     times = []
+    merge_setting = "between"
     for l in tracklength:
-
-        ego_spec, test_spec = specs_for_entire_track(l)
+        ego_spec, test_spec = specs_full(l, merge_setting)
         gr_spec = make_grspec(test_spec, ego_spec) # Placing test_spec as sys_spec and sys_spec as env_spec to
         print(gr_spec.pretty())
-
         w_set = WinningSet()
         tic = time.time()
         w_set.set_spec(gr_spec)
@@ -138,5 +136,5 @@ if __name__=='__main__':
     tracklength, times = original_specs()
     print(times)
     save_times(tracklength,times,filename='orig_times_file.p')
-    
+
     # plot_the_times(tracklength, times)
