@@ -4,3 +4,7 @@
 *.pyc
 *.gif
 __pycache__/
+*.p
+*.png
+*.pdf
+*.svg
